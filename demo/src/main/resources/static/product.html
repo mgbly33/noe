@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品管理</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>商品管理</h1>
+        <nav class="nav">
+            <a href="index.html">首页</a>
+            <a href="product.html" class="active">商品管理</a>
+            <a href="category.html">分类管理</a>
+            <a href="inventory.html">库存管理</a>
+            <a href="pricing.html">价格管理</a>
+            <a href="order.html">订单管理</a>
+        </nav>
+        <div class="panel">
+            <div class="filter-bar">
+                <select id="category-filter" onchange="loadData()">
+                    <option value="">全部分类</option>
+                </select>
+                <button class="btn btn-primary" onclick="showModal()">添加商品</button>
+            </div>
+            <table>
+                <thead><tr><th>ID</th><th>名称</th><th>分类</th><th>价格</th><th>库存</th><th>操作</th></tr></thead>
+                <tbody id="table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">添加商品</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="form">
+                <input type="hidden" id="item-id">
+                <div class="form-row">
+                    <div class="form-group"><label>商品名称</label><input type="text" id="item-name" required></div>
+                    <div class="form-group"><label>分类</label><select id="item-category" required></select></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>标准价格</label><input type="number" step="0.01" id="item-price" required></div>
+                    <div class="form-group"><label>库存数量</label><input type="number" id="item-stock" required></div>
+                </div>
+                <div class="form-group"><label>描述</label><textarea id="item-desc" rows="2"></textarea></div>
+                <div class="form-group"><label>图片URL</label><input type="text" id="item-image"></div>
+                <button type="submit" class="btn btn-primary">保存</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/product.js"></script>
+</body>
+</html>

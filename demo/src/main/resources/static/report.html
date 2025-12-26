@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据报表</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>数据报表</h1>
+        <nav class="nav">
+            <a href="index.html">首页</a>
+            <a href="product.html">商品管理</a>
+            <a href="category.html">分类管理</a>
+            <a href="inventory.html">库存管理</a>
+            <a href="pricing.html">价格管理</a>
+            <a href="order.html">订单管理</a>
+            <a href="user.html">用户管理</a>
+            <a href="promotion.html">促销管理</a>
+            <a href="review.html">评价管理</a>
+            <a href="report.html" class="active">数据报表</a>
+        </nav>
+
+        <!-- 概览卡片 -->
+        <div class="stats-cards">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#1890ff">💰</div>
+                <div class="stat-info">
+                    <div class="stat-value" id="today-sales">¥0</div>
+                    <div class="stat-label">今日销售额</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#52c41a">📦</div>
+                <div class="stat-info">
+                    <div class="stat-value" id="today-orders">0</div>
+                    <div class="stat-label">今日订单</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#faad14">⏳</div>
+                <div class="stat-info">
+                    <div class="stat-value" id="pending-orders">0</div>
+                    <div class="stat-label">待处理订单</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#722ed1">👥</div>
+                <div class="stat-info">
+                    <div class="stat-value" id="total-users">0</div>
+                    <div class="stat-label">用户总数</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图表区域 -->
+        <div class="charts-row">
+            <div class="chart-panel">
+                <div class="chart-header">
+                    <h3>销售趋势</h3>
+                    <div class="chart-controls">
+                        <select id="trend-period" onchange="loadSalesTrend()">
+                            <option value="day">按天</option>
+                            <option value="month">按月</option>
+                            <option value="year">按年</option>
+                        </select>
+                    </div>
+                </div>
+                <canvas id="sales-trend-chart"></canvas>
+            </div>
+            <div class="chart-panel">
+                <div class="chart-header">
+                    <h3>订单状态分布</h3>
+                </div>
+                <canvas id="order-status-chart"></canvas>
+            </div>
+        </div>
+
+        <div class="charts-row">
+            <div class="chart-panel">
+                <div class="chart-header">
+                    <h3>热销商品 TOP 10</h3>
+                </div>
+                <canvas id="top-products-chart"></canvas>
+            </div>
+            <div class="chart-panel">
+                <div class="chart-header">
+                    <h3>分类销售占比</h3>
+                </div>
+                <canvas id="category-sales-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- 数据表格 -->
+        <div class="tables-row">
+            <div class="table-panel">
+                <h3>最近订单</h3>
+                <table>
+                    <thead><tr><th>订单号</th><th>买家</th><th>金额</th><th>状态</th><th>时间</th></tr></thead>
+                    <tbody id="recent-orders"></tbody>
+                </table>
+            </div>
+            <div class="table-panel">
+                <h3>低库存预警</h3>
+                <table>
+                    <thead><tr><th>商品</th><th>分类</th><th>库存</th></tr></thead>
+                    <tbody id="low-stock"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/report.js"></script>
+</body>
+</html>

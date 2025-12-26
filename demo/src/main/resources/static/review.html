@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>评价管理</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>评价管理</h1>
+        <nav class="nav">
+            <a href="index.html">首页</a>
+            <a href="product.html">商品管理</a>
+            <a href="category.html">分类管理</a>
+            <a href="inventory.html">库存管理</a>
+            <a href="pricing.html">价格管理</a>
+            <a href="order.html">订单管理</a>
+            <a href="user.html">用户管理</a>
+            <a href="promotion.html">促销管理</a>
+            <a href="review.html" class="active">评价管理</a>
+        </nav>
+        <div class="panel">
+            <div class="filter-bar">
+                <select id="product-filter" onchange="loadData()">
+                    <option value="">全部商品</option>
+                </select>
+                <select id="status-filter" onchange="loadData()">
+                    <option value="">全部状态</option>
+                    <option value="PENDING">待审核</option>
+                    <option value="APPROVED">已通过</option>
+                    <option value="REJECTED">已拒绝</option>
+                </select>
+                <button class="btn btn-success" onclick="showCreateModal()">添加评价</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>商品</th>
+                        <th>用户</th>
+                        <th>评分</th>
+                        <th>评价内容</th>
+                        <th>状态</th>
+                        <th>时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+            </table>
+            <div id="pagination" class="pagination"></div>
+        </div>
+    </div>
+
+    <!-- 评价详情/回复模态框 -->
+    <div id="detail-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>评价详情</h3>
+                <button class="modal-close" onclick="closeModal('detail-modal')">&times;</button>
+            </div>
+            <div id="detail-content"></div>
+        </div>
+    </div>
+
+    <!-- 创建评价模态框 -->
+    <div id="create-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>添加评价</h3>
+                <button class="modal-close" onclick="closeModal('create-modal')">&times;</button>
+            </div>
+            <form id="create-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>选择商品</label>
+                        <select id="review-product" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>用户名</label>
+                        <input type="text" id="review-user" required placeholder="评价用户名">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>评分</label>
+                    <div class="rating-input" id="rating-input">
+                        <span class="star" data-value="1">★</span>
+                        <span class="star" data-value="2">★</span>
+                        <span class="star" data-value="3">★</span>
+                        <span class="star" data-value="4">★</span>
+                        <span class="star" data-value="5">★</span>
+                    </div>
+                    <input type="hidden" id="review-rating" value="5">
+                </div>
+                <div class="form-group">
+                    <label>评价内容</label>
+                    <textarea id="review-content" rows="4" required placeholder="请输入评价内容..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>图片URL（多个用逗号分隔）</label>
+                    <input type="text" id="review-images" placeholder="http://example.com/img1.jpg,http://example.com/img2.jpg">
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="review-anonymous">
+                    <label for="review-anonymous">匿名评价</label>
+                </div>
+                <button type="submit" class="btn btn-primary">提交评价</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 回复模态框 -->
+    <div id="reply-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>回复评价</h3>
+                <button class="modal-close" onclick="closeModal('reply-modal')">&times;</button>
+            </div>
+            <form id="reply-form">
+                <input type="hidden" id="reply-id">
+                <div class="form-group">
+                    <label>回复内容</label>
+                    <textarea id="reply-content" rows="4" required placeholder="请输入回复内容..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">提交回复</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/review.js"></script>
+</body>
+</html>

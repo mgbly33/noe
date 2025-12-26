@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>促销活动管理</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>促销活动管理</h1>
+        <nav class="nav">
+            <a href="index.html">首页</a>
+            <a href="product.html">商品管理</a>
+            <a href="category.html">分类管理</a>
+            <a href="inventory.html">库存管理</a>
+            <a href="pricing.html">价格管理</a>
+            <a href="order.html">订单管理</a>
+            <a href="user.html">用户管理</a>
+            <a href="promotion.html" class="active">促销管理</a>
+        </nav>
+        <div class="panel">
+            <div class="sub-tabs">
+                <button class="sub-tab active" onclick="showSubTab('coupons')">优惠券管理</button>
+                <button class="sub-tab" onclick="showSubTab('discounts')">折扣活动</button>
+            </div>
+
+            <!-- 优惠券管理 -->
+            <div id="coupons-panel">
+                <div class="filter-bar">
+                    <button class="btn btn-success" onclick="showCouponModal()">创建优惠券</button>
+                    <button class="btn btn-info" onclick="loadValidCoupons()">查看有效优惠券</button>
+                    <button class="btn btn-primary" onclick="loadCoupons()">查看全部</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>名称</th>
+                            <th>优惠券码</th>
+                            <th>类型</th>
+                            <th>优惠</th>
+                            <th>使用条件</th>
+                            <th>有效期</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="coupons-table"></tbody>
+                </table>
+            </div>
+
+            <!-- 折扣活动 -->
+            <div id="discounts-panel" class="hidden">
+                <div class="filter-bar">
+                    <button class="btn btn-success" onclick="showDiscountModal()">创建折扣活动</button>
+                    <button class="btn btn-info" onclick="loadActiveDiscounts()">查看进行中</button>
+                    <button class="btn btn-primary" onclick="loadDiscounts()">查看全部</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>活动名称</th>
+                            <th>折扣类型</th>
+                            <th>折扣值</th>
+                            <th>适用范围</th>
+                            <th>活动时间</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="discounts-table"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 优惠券模态框 -->
+    <div id="coupon-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="coupon-modal-title">创建优惠券</h3>
+                <button class="modal-close" onclick="closeModal('coupon-modal')">&times;</button>
+            </div>
+            <form id="coupon-form">
+                <input type="hidden" id="coupon-id">
+                <div class="form-row">
+                    <div class="form-group"><label>优惠券名称</label><input type="text" id="coupon-name" required></div>
+                    <div class="form-group"><label>优惠券码</label><input type="text" id="coupon-code" required></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>类型</label>
+                        <select id="coupon-type" required onchange="onCouponTypeChange()">
+                            <option value="FIXED">满减券</option>
+                            <option value="PERCENT">折扣券</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label id="coupon-value-label">减免金额</label><input type="number" step="0.01" id="coupon-value" required></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>最低消费金额</label><input type="number" step="0.01" id="coupon-min-amount" placeholder="不限制留空"></div>
+                    <div class="form-group" id="max-discount-group"><label>最大优惠金额</label><input type="number" step="0.01" id="coupon-max-discount" placeholder="折扣券适用"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>发放总量</label><input type="number" id="coupon-total" placeholder="不限制留空"></div>
+                    <div class="form-group"><label>每人限领</label><input type="number" id="coupon-limit" value="1"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>开始时间</label><input type="datetime-local" id="coupon-start" required></div>
+                    <div class="form-group"><label>结束时间</label><input type="datetime-local" id="coupon-end" required></div>
+                </div>
+                <div class="form-group"><label>描述</label><textarea id="coupon-desc" rows="2"></textarea></div>
+                <button type="submit" class="btn btn-primary">保存</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 折扣活动模态框 -->
+    <div id="discount-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="discount-modal-title">创建折扣活动</h3>
+                <button class="modal-close" onclick="closeModal('discount-modal')">&times;</button>
+            </div>
+            <form id="discount-form">
+                <input type="hidden" id="discount-id">
+                <div class="form-group"><label>活动名称</label><input type="text" id="discount-name" required></div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>折扣类型</label>
+                        <select id="discount-type" required onchange="onDiscountTypeChange()">
+                            <option value="PERCENT">折扣</option>
+                            <option value="FIXED">直减</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label id="discount-value-label">折扣(如85表示85折)</label><input type="number" step="0.01" id="discount-value" required></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>适用范围</label>
+                        <select id="discount-scope" required onchange="onDiscountScopeChange()">
+                            <option value="ALL">全场</option>
+                            <option value="CATEGORY">指定分类</option>
+                            <option value="PRODUCT">指定商品</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="category-group" style="display:none">
+                        <label>选择分类</label>
+                        <select id="discount-category"></select>
+                    </div>
+                </div>
+                <div class="form-group" id="products-group" style="display:none">
+                    <label>商品ID(多个用逗号分隔)</label>
+                    <input type="text" id="discount-products" placeholder="如: 1,2,3">
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>开始时间</label><input type="datetime-local" id="discount-start" required></div>
+                    <div class="form-group"><label>结束时间</label><input type="datetime-local" id="discount-end" required></div>
+                </div>
+                <div class="form-group"><label>描述</label><textarea id="discount-desc" rows="2"></textarea></div>
+                <button type="submit" class="btn btn-primary">保存</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/promotion.js"></script>
+</body>
+</html>

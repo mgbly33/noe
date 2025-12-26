@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>库存管理</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>库存管理</h1>
+        <nav class="nav">
+            <a href="index.html">首页</a>
+            <a href="product.html">商品管理</a>
+            <a href="category.html">分类管理</a>
+            <a href="inventory.html" class="active">库存管理</a>
+            <a href="pricing.html">价格管理</a>
+            <a href="order.html">订单管理</a>
+        </nav>
+        <div class="panel">
+            <div class="filter-bar">
+                <label>低库存阈值:</label>
+                <input type="number" id="threshold" value="10" style="width:80px">
+                <button class="btn btn-warning" onclick="loadLowStock()">查看低库存</button>
+                <button class="btn btn-primary" onclick="loadData()">查看全部</button>
+            </div>
+            <table>
+                <thead><tr><th>ID</th><th>商品名称</th><th>分类</th><th>当前库存</th><th>操作</th></tr></thead>
+                <tbody id="table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>修改库存</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="form">
+                <input type="hidden" id="item-id">
+                <p id="item-name" style="margin-bottom:15px;font-weight:bold"></p>
+                <div class="form-group">
+                    <label>库存数量</label>
+                    <input type="number" id="item-stock" required>
+                </div>
+                <button type="submit" class="btn btn-primary">保存</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/inventory.js"></script>
+</body>
+</html>
