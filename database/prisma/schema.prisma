@@ -1,0 +1,336 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("DATABASE_SHADOW_URL")
+}
+
+model User {
+  id            BigInt    @id @default(autoincrement())
+  user_id       String    @unique @db.VarChar(64)
+  login_type    String?   @db.VarChar(32)
+  login_name    String?   @unique @db.VarChar(64)
+  password_hash String?   @db.VarChar(255)
+  role          String    @default("guest") @db.VarChar(32)
+  device_id     String?   @db.VarChar(128)
+  channel       String    @db.VarChar(32)
+  openid        String?   @unique @db.VarChar(128)
+  unionid       String?   @db.VarChar(128)
+  mobile_masked String?   @db.VarChar(32)
+  nickname      String?   @db.VarChar(64)
+  avatar_url    String?   @db.VarChar(512)
+  register_time DateTime  @default(now())
+  status        String    @default("active") @db.VarChar(32)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  is_deleted    Boolean   @default(false)
+
+  @@index([unionid])
+  @@index([openid])
+  @@index([login_name])
+  @@map("t_user")
+}
+
+model ConsentRecord {
+  id           BigInt   @id @default(autoincrement())
+  consent_id   String   @unique @db.VarChar(64)
+  user_id      String   @db.VarChar(64)
+  consent_type String   @db.VarChar(32)
+  version      String   @db.VarChar(32)
+  accepted     Boolean  @default(false)
+  channel      String   @db.VarChar(32)
+  client_ip    String?  @db.VarChar(64)
+  device_id    String?  @db.VarChar(128)
+  accepted_at  DateTime?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@index([user_id, consent_type, version])
+  @@map("t_consent_record")
+}
+
+model QuestionSession {
+  id            BigInt   @id @default(autoincrement())
+  session_id    String   @unique @db.VarChar(64)
+  user_id       String   @db.VarChar(64)
+  topic_type    String   @db.VarChar(32)
+  question_text String   @db.VarChar(2000)
+  question_hash String   @db.VarChar(128)
+  risk_level    String   @db.VarChar(16)
+  risk_tags     Json?
+  entry_channel String   @db.VarChar(32)
+  status        String   @default("created") @db.VarChar(32)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@index([user_id, created_at])
+  @@index([question_hash])
+  @@map("t_question_session")
+}
+
+model ProductSku {
+  id            BigInt    @id @default(autoincrement())
+  sku_id        String    @unique @db.VarChar(64)
+  sku_type      String    @db.VarChar(32)
+  reading_type  String    @db.VarChar(32)
+  title         String    @db.VarChar(128)
+  sub_title     String?   @db.VarChar(256)
+  price_amount  Decimal   @db.Decimal(10, 2)
+  currency      String    @default("CNY") @db.VarChar(16)
+  credit_count  Int       @default(1)
+  validity_days Int       @default(30)
+  status        String    @default("active") @db.VarChar(32)
+  channel_scope String?   @db.VarChar(64)
+  sort_no       Int       @default(0)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  @@index([status, sort_no])
+  @@map("t_product_sku")
+}
+
+model Order {
+  id              BigInt    @id @default(autoincrement())
+  order_id        String    @unique @db.VarChar(64)
+  user_id         String    @db.VarChar(64)
+  session_id      String    @db.VarChar(64)
+  sku_id          String    @db.VarChar(64)
+  biz_type        String    @default("reading_purchase") @db.VarChar(32)
+  amount          Decimal   @db.Decimal(10, 2)
+  discount_amount Decimal   @default(0) @db.Decimal(10, 2)
+  payable_amount  Decimal   @db.Decimal(10, 2)
+  pay_status      String    @db.VarChar(32)
+  order_status    String    @db.VarChar(32)
+  source          String?   @db.VarChar(64)
+  expired_at      DateTime?
+  paid_at         DateTime?
+  closed_at       DateTime?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  @@index([user_id, created_at])
+  @@index([pay_status, created_at])
+  @@index([session_id])
+  @@map("t_order")
+}
+
+model PaymentTransaction {
+  id                   BigInt    @id @default(autoincrement())
+  transaction_id       String    @unique @db.VarChar(64)
+  order_id             String    @db.VarChar(64)
+  pay_channel          String    @db.VarChar(32)
+  third_party_trade_no String?   @unique @db.VarChar(128)
+  prepay_id            String?   @db.VarChar(128)
+  callback_payload     Json?
+  pay_status           String    @db.VarChar(32)
+  paid_amount          Decimal?  @db.Decimal(10, 2)
+  paid_at              DateTime?
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  @@index([order_id])
+  @@map("t_payment_transaction")
+}
+
+model EntitlementAsset {
+  id              BigInt    @id @default(autoincrement())
+  asset_id        String    @unique @db.VarChar(64)
+  user_id         String    @db.VarChar(64)
+  source_order_id String    @db.VarChar(64)
+  asset_type      String    @default("reading_credit") @db.VarChar(32)
+  total_count     Int
+  available_count Int
+  locked_count    Int       @default(0)
+  consumed_count  Int       @default(0)
+  expired_at      DateTime?
+  status          String    @default("available") @db.VarChar(32)
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  @@index([user_id, status, expired_at])
+  @@index([source_order_id])
+  @@map("t_entitlement_asset")
+}
+
+model EntitlementConsumeLog {
+  id           BigInt   @id @default(autoincrement())
+  log_id       String   @unique @db.VarChar(64)
+  asset_id     String   @db.VarChar(64)
+  user_id      String   @db.VarChar(64)
+  reading_id   String?  @db.VarChar(64)
+  action_type  String   @db.VarChar(32)
+  change_count Int
+  before_count Int
+  after_count  Int
+  remark       String?  @db.VarChar(256)
+  created_at   DateTime @default(now())
+
+  @@index([asset_id, created_at])
+  @@index([reading_id])
+  @@map("t_entitlement_consume_log")
+}
+
+model Reading {
+  id                 BigInt   @id @default(autoincrement())
+  reading_id         String   @unique @db.VarChar(64)
+  user_id            String   @db.VarChar(64)
+  session_id         String   @db.VarChar(64)
+  spread_type        String   @db.VarChar(32)
+  question_text      String   @db.VarChar(2000)
+  reading_status     String   @db.VarChar(32)
+  risk_level         String   @db.VarChar(16)
+  source_order_id    String?  @db.VarChar(64)
+  source_asset_id    String?  @db.VarChar(64)
+  style_code         String?  @db.VarChar(32)
+  disclaimer_version String?  @db.VarChar(32)
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  @@index([user_id, created_at])
+  @@index([session_id])
+  @@index([source_order_id])
+  @@map("t_reading")
+}
+
+model DrawResult {
+  id               BigInt   @id @default(autoincrement())
+  draw_id          String   @unique @db.VarChar(64)
+  reading_id       String   @unique @db.VarChar(64)
+  deck_version     String   @db.VarChar(32)
+  spread_type      String   @db.VarChar(32)
+  cards_json       Json
+  reversed_enabled Boolean  @default(false)
+  random_signature String?  @db.VarChar(256)
+  redraw_count     Int      @default(0)
+  drawn_at         DateTime
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  @@index([drawn_at])
+  @@map("t_draw_result")
+}
+
+model Interpretation {
+  id                BigInt   @id @default(autoincrement())
+  interpretation_id String   @unique @db.VarChar(64)
+  reading_id        String   @unique @db.VarChar(64)
+  structured_json   Json
+  final_text        String?  @db.MediumText
+  model_vendor      String?  @db.VarChar(64)
+  model_version     String?  @db.VarChar(64)
+  prompt_version    String?  @db.VarChar(64)
+  policy_version    String?  @db.VarChar(64)
+  safety_result     String?  @db.VarChar(32)
+  latency_ms        Int?
+  token_input       Int?
+  token_output      Int?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  @@index([model_vendor, model_version])
+  @@map("t_interpretation")
+}
+
+model FollowupMessage {
+  id            BigInt   @id @default(autoincrement())
+  message_id    String   @unique @db.VarChar(64)
+  reading_id    String   @db.VarChar(64)
+  role          String   @db.VarChar(16)
+  content       String   @db.MediumText
+  risk_flag     String?  @db.VarChar(32)
+  model_vendor  String?  @db.VarChar(64)
+  model_version String?  @db.VarChar(64)
+  created_at    DateTime @default(now())
+
+  @@index([reading_id, created_at])
+  @@map("t_followup_message")
+}
+
+model RiskEvent {
+  id                   BigInt   @id @default(autoincrement())
+  event_id             String   @unique @db.VarChar(64)
+  user_id              String?  @db.VarChar(64)
+  session_id           String?  @db.VarChar(64)
+  reading_id           String?  @db.VarChar(64)
+  order_id             String?  @db.VarChar(64)
+  scene                String   @db.VarChar(32)
+  trigger_type         String?  @db.VarChar(64)
+  trigger_content_hash String?  @db.VarChar(128)
+  risk_level           String   @db.VarChar(16)
+  risk_tags            Json?
+  action_taken         String   @db.VarChar(64)
+  review_status        String   @default("pending") @db.VarChar(32)
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  @@index([user_id, created_at])
+  @@index([reading_id])
+  @@index([scene, risk_level, created_at])
+  @@map("t_risk_event")
+}
+
+model OperationAuditLog {
+  id              BigInt   @id @default(autoincrement())
+  log_id          String   @unique @db.VarChar(64)
+  operator_id     String   @db.VarChar(64)
+  module_name     String   @db.VarChar(64)
+  operation_type  String   @db.VarChar(64)
+  target_id       String?  @db.VarChar(64)
+  before_snapshot Json?
+  after_snapshot  Json?
+  created_at      DateTime @default(now())
+
+  @@index([operator_id, created_at])
+  @@map("t_operation_audit_log")
+}
+
+model ProtocolVersion {
+  id            BigInt   @id @default(autoincrement())
+  protocol_id   String   @unique @db.VarChar(64)
+  protocol_type String   @db.VarChar(32)
+  version       String   @db.VarChar(32)
+  title         String   @db.VarChar(128)
+  content       String   @db.MediumText
+  status        String   @default("active") @db.VarChar(32)
+  published_at  DateTime?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@index([protocol_type, status])
+  @@map("t_protocol_version")
+}
+
+model PromptPolicyVersion {
+  id                      BigInt   @id @default(autoincrement())
+  policy_version          String   @unique @db.VarChar(64)
+  model_route_code        String?  @db.VarChar(64)
+  prompt_template         Json
+  rewrite_policy_version  String?  @db.VarChar(64)
+  fallback_policy_version String?  @db.VarChar(64)
+  gray_scope              Json?
+  status                  String   @default("inactive") @db.VarChar(32)
+  published_at            DateTime?
+  created_at              DateTime @default(now())
+  updated_at              DateTime @updatedAt
+
+  @@index([status, published_at])
+  @@map("t_prompt_policy_version")
+}
+
+model TopicTemplate {
+  id               BigInt   @id @default(autoincrement())
+  template_id      String   @unique @db.VarChar(64)
+  topic_type       String   @db.VarChar(32)
+  title            String   @db.VarChar(128)
+  example_question String   @db.VarChar(512)
+  sort_no          Int      @default(0)
+  status           String   @default("active") @db.VarChar(32)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  @@index([status, sort_no])
+  @@map("t_topic_template")
+}
