@@ -11,8 +11,10 @@ export class AuthController {
     @Body()
     body: {
       login_type: string;
-      device_id: string;
-      channel: string;
+      device_id?: string;
+      channel?: string;
+      login_name?: string;
+      password?: string;
     },
   ) {
     return {

@@ -1,4 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { createHash } from 'node:crypto';
+
+import { createBusinessId } from '../../common/id';
+import { PrismaService } from '../../prisma/prisma.service';
 
 type RiskResult = {
   risk_level: 'LOW' | 'MEDIUM' | 'BLOCK';
@@ -49,6 +53,8 @@ const MEDIUM_RULES: readonly PhraseRule[] = [
 
 @Injectable()
 export class RiskService {
+  constructor(private readonly prisma: PrismaService) {}
+
   evaluateQuestion(questionText: string): RiskResult {
     const normalizedText = questionText.trim().toLowerCase();
 
@@ -69,5 +75,37 @@ export class RiskService {
       risk_tags: [],
       action: 'pass',
     };
+  }
+
+  async recordQuestionRiskEvent(input: {
+    user_id: string;
+    question_text: string;
+    risk_level: RiskResult['risk_level'];
+    risk_tags: string[];
+    scene: string;
+    session_id?: string;
+    reading_id?: string;
+  }) {
+    if (input.risk_level === 'LOW') {
+      return null;
+    }
+
+    return this.prisma.riskEvent.create({
+      data: {
+        event_id: createBusinessId('risk'),
+        user_id: input.user_id,
+        session_id: input.session_id,
+        reading_id: input.reading_id,
+        scene: input.scene,
+        trigger_type: 'text_match',
+        trigger_content_hash: createHash('sha256')
+          .update(input.question_text.trim().toLowerCase())
+          .digest('hex'),
+        risk_level: input.risk_level,
+        risk_tags: input.risk_tags,
+        action_taken:
+          input.risk_level === 'BLOCK' ? 'redirect_support_page' : 'downgrade',
+      },
+    });
   }
 }

@@ -11,7 +11,7 @@ export class RiskController {
   ) {}
 
   @Post('check-risk')
-  checkRisk(
+  async checkRisk(
     @Headers('authorization') authorization: string | undefined,
     @Body()
     body: {
@@ -19,11 +19,20 @@ export class RiskController {
       topic_type: string;
     },
   ) {
-    this.authService.verifyAuthorizationHeader(authorization);
+    const tokenPayload =
+      this.authService.verifyAuthorizationHeader(authorization);
+    const risk = this.riskService.evaluateQuestion(body.question_text);
+    await this.riskService.recordQuestionRiskEvent({
+      user_id: tokenPayload.user_id,
+      question_text: body.question_text,
+      risk_level: risk.risk_level,
+      risk_tags: risk.risk_tags,
+      scene: 'question_check',
+    });
 
     return {
       code: 0,
-      data: this.riskService.evaluateQuestion(body.question_text),
+      data: risk,
     };
   }
 }

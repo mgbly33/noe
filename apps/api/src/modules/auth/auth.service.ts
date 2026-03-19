@@ -20,8 +20,10 @@ loadEnv();
 
 type LoginRequest = {
   login_type: string;
-  device_id: string;
-  channel: string;
+  device_id?: string;
+  channel?: string;
+  login_name?: string;
+  password?: string;
 };
 
 type AccessTokenPayload = JwtPayload & {
@@ -36,9 +38,16 @@ export class AuthService {
   constructor(private readonly prisma: PrismaService) {}
 
   async login(body: LoginRequest) {
+    if (body.login_type === 'local_admin') {
+      return this.loginLocalAdmin(body);
+    }
+
     if (body.login_type !== 'guest') {
+      throw new BadRequestException('Unsupported login type.');
+    }
+    if (!body.device_id || !body.channel) {
       throw new BadRequestException(
-        'Only guest login is implemented in phase 1.',
+        'Guest login requires device_id and channel.',
       );
     }
 
@@ -84,6 +93,15 @@ export class AuthService {
     }
   }
 
+  assertAdminAuthorization(authorization?: string) {
+    const tokenPayload = this.verifyAuthorizationHeader(authorization);
+    if (!['admin', 'super_admin'].includes(tokenPayload.role)) {
+      throw new ForbiddenException('Admin access is required.');
+    }
+
+    return tokenPayload;
+  }
+
   verifyAuthorizationHeader(authorization?: string) {
     if (!authorization?.startsWith('Bearer ')) {
       throw new UnauthorizedException('Missing bearer token.');
@@ -103,6 +121,37 @@ export class AuthService {
       expiresIn: '7d',
       subject: payload.user_id,
     });
+  }
+
+  private async loginLocalAdmin(body: LoginRequest) {
+    if (!body.login_name || !body.password) {
+      throw new BadRequestException(
+        'Admin login requires login_name and password.',
+      );
+    }
+
+    const admin = await this.prisma.user.findFirst({
+      where: {
+        login_type: 'local_admin',
+        login_name: body.login_name,
+        password_hash: body.password,
+        status: 'active',
+      },
+    });
+    if (!admin) {
+      throw new UnauthorizedException('Invalid admin credentials.');
+    }
+
+    return {
+      user_id: admin.user_id,
+      token: this.signAccessToken({
+        user_id: admin.user_id,
+        role: admin.role,
+        channel: body.channel ?? admin.channel,
+      }),
+      need_consent: false,
+      role: admin.role,
+    };
   }
 
   private getJwtSecret() {
