@@ -199,7 +199,9 @@ export class AuthService {
 
     const user = await this.prisma.user.findFirst({
       where: {
-        login_type: 'local',
+        login_type: {
+          in: ['local', 'local_admin'],
+        },
         login_name: body.login_name,
         status: 'active',
         is_deleted: false,

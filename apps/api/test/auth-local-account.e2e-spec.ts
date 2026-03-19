@@ -142,4 +142,26 @@ describe('Local Auth Account (e2e)', () => {
 
     expect(loginResponse.status).toBe(401);
   });
+
+  it('logs in the seeded admin through the unified local login path', async () => {
+    const response = await request(app.getHttpServer()).post('/auth/login').send({
+      login_type: 'local',
+      login_name: 'admin',
+      password: 'admin123456',
+      channel: 'ops_console',
+    });
+
+    const data = unwrapData<{
+      role: string;
+      login_name: string;
+      need_consent: boolean;
+      token: string;
+    }>(response.body);
+
+    expect(response.status).toBe(201);
+    expect(data.role).toBe('super_admin');
+    expect(data.login_name).toBe('admin');
+    expect(data.need_consent).toBe(false);
+    expect(data.token).toBeTruthy();
+  });
 });
