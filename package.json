@@ -1,0 +1,40 @@
+{
+  "name": "ai-tarot-mvp",
+  "private": true,
+  "packageManager": "pnpm@10.22.0",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "dev:api": "pnpm --filter @ai-tarot/api start",
+    "dev:web": "pnpm --filter @ai-tarot/web dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:api:e2e": "pnpm --filter @ai-tarot/api test:e2e",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "playwright:install": "playwright install chromium",
+    "db:up": "docker compose up -d mysql",
+    "db:down": "docker compose down",
+    "db:generate": "prisma generate --schema database/prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema database/prisma/schema.prisma",
+    "db:seed": "tsx database/prisma/seed.ts",
+    "db:check-seed": "tsx database/scripts/check-seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.7.0",
+    "dotenv": "^16.5.0",
+    "mysql2": "^3.15.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "playwright": "^1.52.0",
+    "prettier": "^3.5.3",
+    "prisma": "^6.7.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.5",
+    "turbo": "^2.5.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}
