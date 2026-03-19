@@ -6,19 +6,36 @@ import type { ReadingDetail } from '@/lib/api/client';
 
 type ReadingResultProps = {
   reading: ReadingDetail;
+  themeLabel: string;
 };
 
-export function ReadingResult({ reading }: ReadingResultProps) {
+export function ReadingResult({ reading, themeLabel }: ReadingResultProps) {
   const summary =
-    reading.interpretation?.structured_result.summary ?? '系统已整理好本次牌面的核心主题。';
+    reading.interpretation?.structured_result.summary ?? '系统已经整理好本次牌面的核心主题。';
   const guidance = reading.interpretation?.structured_result.guidance ?? [];
 
   return (
     <div className="result-layout">
-      <section className="panel-card" data-testid="result-summary">
+      <section className="panel-card result-hero-card" data-testid="result-summary">
         <p className="eyebrow">Reading Ready</p>
         <h2>{reading.interpretation?.structured_result.theme ?? '本次解读结果'}</h2>
         <p className="lede compact">{summary}</p>
+
+        <div className="summary-grid summary-grid-stack">
+          <div>
+            <dt>解读主题</dt>
+            <dd>{themeLabel}</dd>
+          </div>
+          <div>
+            <dt>当前状态</dt>
+            <dd>{reading.reading_status}</dd>
+          </div>
+          <div>
+            <dt>牌阵类型</dt>
+            <dd>{reading.spread_type.replace('_', ' ')}</dd>
+          </div>
+        </div>
+
         <p className="result-text">{reading.interpretation?.final_text}</p>
       </section>
 
@@ -26,7 +43,7 @@ export function ReadingResult({ reading }: ReadingResultProps) {
         <div className="panel-head">
           <div>
             <p className="eyebrow">Cards</p>
-            <h3>这次抽到的牌</h3>
+            <h3>这次抽到的牌面</h3>
           </div>
           <span className="status-pill">{reading.reading_status}</span>
         </div>
@@ -34,7 +51,7 @@ export function ReadingResult({ reading }: ReadingResultProps) {
         <div className="draw-grid">
           {reading.draw?.cards.map((card) => (
             <article key={card.card_id} className="draw-card">
-              <span className="eyebrow">Position {card.position}</span>
+              <span className="eyebrow">{`位置 ${card.position}`}</span>
               <strong>{card.card_name}</strong>
               <p>{card.orientation === 'reversed' ? '逆位' : '正位'}</p>
             </article>
@@ -42,11 +59,14 @@ export function ReadingResult({ reading }: ReadingResultProps) {
         </div>
 
         {guidance.length ? (
-          <ul className="bullet-list spacious">
-            {guidance.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
+          <div className="guidance-section">
+            <strong>可以先记住的提醒</strong>
+            <ul className="bullet-list spacious">
+              {guidance.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
         ) : null}
 
         <div className="action-row">
@@ -57,7 +77,7 @@ export function ReadingResult({ reading }: ReadingResultProps) {
             继续追问
           </Link>
           <Link href="/history" className="ghost-button link-button">
-            查看历史
+            查看档案
           </Link>
         </div>
       </section>

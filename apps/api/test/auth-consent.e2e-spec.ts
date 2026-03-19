@@ -25,12 +25,14 @@ describe('Auth and Consent (e2e)', () => {
   });
 
   it('creates a local session token', async () => {
-    const response = await request(app.getHttpServer()).post('/auth/register').send({
-      login_type: 'local',
-      login_name: createLoginName('consent_local'),
-      password: 'secret123',
-      channel: 'h5',
-    });
+    const response = await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        login_type: 'local',
+        login_name: createLoginName('consent_local'),
+        password: 'secret123',
+        channel: 'h5',
+      });
     const body = response.body as {
       data: {
         need_consent: boolean;
@@ -46,12 +48,14 @@ describe('Auth and Consent (e2e)', () => {
   });
 
   it('records consent acceptance and marks the user as consented', async () => {
-    const loginResponse = await request(app.getHttpServer()).post('/auth/register').send({
-      login_type: 'local',
-      login_name: createLoginName('accept_local'),
-      password: 'secret123',
-      channel: 'h5',
-    });
+    const loginResponse = await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        login_type: 'local',
+        login_name: createLoginName('accept_local'),
+        password: 'secret123',
+        channel: 'h5',
+      });
     const loginBody = loginResponse.body as {
       data: {
         token: string;

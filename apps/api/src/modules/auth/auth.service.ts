@@ -208,7 +208,10 @@ export class AuthService {
       },
     });
 
-    if (!user?.password_hash || !verifyPassword(body.password, user.password_hash)) {
+    if (
+      !user?.password_hash ||
+      !verifyPassword(body.password, user.password_hash)
+    ) {
       throw new UnauthorizedException('Invalid credentials.');
     }
 

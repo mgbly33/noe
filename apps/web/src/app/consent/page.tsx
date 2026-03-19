@@ -1,25 +1,33 @@
-'use client';
+"use client";
 
-import { startTransition, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { startTransition, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-import { AppShell } from '@/components/common/app-shell';
-import { ConsentForm } from '@/components/consent/consent-form';
-import { apiClient, ConsentVersions } from '@/lib/api/client';
-import { ensureGuestSession, getGuestToken } from '@/lib/auth/session';
-import { loadReadingFlow, saveReadingFlow } from '@/lib/state/reading-flow';
+import { AppShell } from "@/components/common/app-shell";
+import { ConsentForm } from "@/components/consent/consent-form";
+import { apiClient, type ConsentVersions } from "@/lib/api/client";
+import { patchSession } from "@/lib/auth/session";
+import { useRequireSession } from "@/lib/auth/route-guards";
+import { getDefaultTheme } from "@/lib/ritual-themes";
+import { loadReadingFlow, saveReadingFlow } from "@/lib/state/reading-flow";
 
 export default function ConsentPage() {
   const router = useRouter();
+  const { ready, session } = useRequireSession({
+    requireConsent: false,
+  });
   const [checked, setChecked] = useState(false);
   const [busy, setBusy] = useState(false);
   const [versions, setVersions] = useState<ConsentVersions | null>(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+  const [themeSlug, setThemeSlug] = useState(getDefaultTheme().slug);
 
   useEffect(() => {
+    const current = loadReadingFlow();
+    setThemeSlug(current.entry_theme ?? getDefaultTheme().slug);
+
     void (async () => {
       try {
-        await ensureGuestSession();
         const latest = await apiClient.getConsentLatest();
         setVersions(latest);
         saveReadingFlow({
@@ -28,22 +36,23 @@ export default function ConsentPage() {
         });
       } catch (nextError) {
         setError(
-          nextError instanceof Error ? nextError.message : '无法加载声明版本。',
+          nextError instanceof Error
+            ? nextError.message
+            : "无法加载当前说明版本。",
         );
       }
     })();
   }, []);
 
   const submit = async () => {
-    const token = getGuestToken();
+    const token = session?.token;
     if (!token || !versions) {
-      setError('当前会话还没准备好，请稍后重试。');
-
+      setError("当前会话尚未准备好，请稍后重试。");
       return;
     }
 
     setBusy(true);
-    setError('');
+    setError("");
 
     try {
       await apiClient.acceptConsent(token, {
@@ -54,23 +63,36 @@ export default function ConsentPage() {
         consent_versions: versions,
         consent_accepted: true,
       });
+      patchSession({
+        need_consent: false,
+      });
       startTransition(() => {
-        router.push('/question');
+        router.push("/question");
       });
     } catch (nextError) {
       setError(
-        nextError instanceof Error ? nextError.message : '提交 consent 失败。',
+        nextError instanceof Error
+          ? nextError.message
+          : "确认说明失败，请稍后再试。",
       );
     } finally {
       setBusy(false);
     }
   };
 
+  if (!ready || !session) {
+    return null;
+  }
+
   return (
     <AppShell
+      variant="flow"
+      stage={1}
+      stageLabel="边界确认"
+      themeSlug={themeSlug}
       eyebrow="Consent"
-      title="先确认边界，再让系统继续。"
-      description="这一步只做一件事：拿到最新协议版本，并把 consent 和当前会话绑在一起。"
+      title="开始之前，先把边界、说明和信任关系确认清楚。"
+      description="这一页只做一件事：确认说明版本，并把 consent 绑定到你的真实账户。"
     >
       <ConsentForm
         checked={checked}

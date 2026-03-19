@@ -5,6 +5,8 @@ type MockCheckoutProps = {
   price: number;
   orderId: string;
   pending: boolean;
+  themeLabel: string;
+  questionText?: string;
   onPay: () => void;
 };
 
@@ -13,21 +15,31 @@ export function MockCheckout({
   price,
   orderId,
   pending,
+  themeLabel,
+  questionText,
   onPay,
 }: MockCheckoutProps) {
   return (
-    <div className="panel-card">
-      <div className="panel-head">
+    <div className="panel-card form-panel">
+      <div className="panel-head panel-head-start">
         <div>
-          <p className="eyebrow">Mock Checkout</p>
+          <p className="eyebrow">Ritual Confirmation</p>
           <h2>{title}</h2>
         </div>
         <span className="price-chip">¥ {price.toFixed(2)}</span>
       </div>
 
-      <dl className="summary-grid">
+      <p className="muted-text">
+        你即将确认本次解读。支付完成后，系统会为你锁定权益并开始生成对应的牌阵与结果。
+      </p>
+
+      <dl className="summary-grid summary-grid-stack">
         <div>
-          <dt>订单号</dt>
+          <dt>本次主题</dt>
+          <dd>{themeLabel}</dd>
+        </div>
+        <div>
+          <dt>订单编号</dt>
           <dd>{orderId}</dd>
         </div>
         <div>
@@ -36,6 +48,13 @@ export function MockCheckout({
         </div>
       </dl>
 
+      {questionText ? (
+        <div className="quote-card">
+          <strong>本次想问的问题</strong>
+          <p>{questionText}</p>
+        </div>
+      ) : null}
+
       <button
         type="button"
         className="primary-button"
@@ -43,7 +62,7 @@ export function MockCheckout({
         onClick={onPay}
         disabled={pending}
       >
-        {pending ? '确认支付中...' : '确认并完成支付'}
+        {pending ? '正在确认支付…' : '确认并开始这次解读'}
       </button>
     </div>
   );

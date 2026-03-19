@@ -16,17 +16,19 @@ export function HistoryList({ items, onArchive }: HistoryListProps) {
   if (!items.length) {
     return (
       <div className="panel-card">
-        <p className="eyebrow">History</p>
-        <h2>还没有可回看的记录</h2>
-        <p className="muted-text">完成一次支付占卜后，这里会保留 READY 或 FOLLOW_UP 状态的记录。</p>
+        <p className="eyebrow">Archive</p>
+        <h2>你的解读档案还在等待第一条记录</h2>
+        <p className="muted-text">
+          完成一次支付解读后，这里会保留 READY 或 FOLLOW_UP 状态的结果，方便你回看或继续追问。
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="list-stack">
+    <div className="list-stack archive-grid">
       {items.map((item) => (
-        <article key={item.reading_id} className="panel-card compact-card">
+        <article key={item.reading_id} className="panel-card compact-card archive-card">
           <div className="panel-head">
             <div>
               <p className="eyebrow">{item.spread_type.replace('_', ' ')}</p>

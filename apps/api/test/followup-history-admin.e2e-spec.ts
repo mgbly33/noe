@@ -20,12 +20,14 @@ describe('Follow-up, History, and Admin (e2e)', () => {
     `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
   const createConsentedToken = async () => {
-    const loginResponse = await request(app.getHttpServer()).post('/auth/register').send({
-      login_type: 'local',
-      login_name: createLoginName('history_user'),
-      password: 'secret123',
-      channel: 'h5',
-    });
+    const loginResponse = await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        login_type: 'local',
+        login_name: createLoginName('history_user'),
+        password: 'secret123',
+        channel: 'h5',
+      });
     const loginData = unwrapData<{ token: string }>(loginResponse.body);
     const token = loginData.token;
 

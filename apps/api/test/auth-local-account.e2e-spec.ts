@@ -35,12 +35,14 @@ describe('Local Auth Account (e2e)', () => {
   it('registers a local user and returns a login session', async () => {
     const loginName = createLoginName('local_user');
 
-    const response = await request(app.getHttpServer()).post('/auth/register').send({
-      login_type: 'local',
-      login_name: loginName,
-      password: 'secret123',
-      channel: 'h5',
-    });
+    const response = await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        login_type: 'local',
+        login_name: loginName,
+        password: 'secret123',
+        channel: 'h5',
+      });
 
     const data = unwrapData<{
       user_id: string;
@@ -77,20 +79,24 @@ describe('Local Auth Account (e2e)', () => {
 
   it('logs in a registered local user and resolves auth me', async () => {
     const loginName = createLoginName('login_user');
-    const registerResponse = await request(app.getHttpServer()).post('/auth/register').send({
-      login_type: 'local',
-      login_name: loginName,
-      password: 'secret123',
-      channel: 'h5',
-    });
+    const registerResponse = await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({
+        login_type: 'local',
+        login_name: loginName,
+        password: 'secret123',
+        channel: 'h5',
+      });
     const registerData = unwrapData<{ user_id: string }>(registerResponse.body);
 
-    const loginResponse = await request(app.getHttpServer()).post('/auth/login').send({
-      login_type: 'local',
-      login_name: loginName,
-      password: 'secret123',
-      channel: 'h5',
-    });
+    const loginResponse = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({
+        login_type: 'local',
+        login_name: loginName,
+        password: 'secret123',
+        channel: 'h5',
+      });
     const loginData = unwrapData<{
       user_id: string;
       token: string;
@@ -133,23 +139,27 @@ describe('Local Auth Account (e2e)', () => {
       channel: 'h5',
     });
 
-    const loginResponse = await request(app.getHttpServer()).post('/auth/login').send({
-      login_type: 'local',
-      login_name: loginName,
-      password: 'not-the-same',
-      channel: 'h5',
-    });
+    const loginResponse = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({
+        login_type: 'local',
+        login_name: loginName,
+        password: 'not-the-same',
+        channel: 'h5',
+      });
 
     expect(loginResponse.status).toBe(401);
   });
 
   it('logs in the seeded admin through the unified local login path', async () => {
-    const response = await request(app.getHttpServer()).post('/auth/login').send({
-      login_type: 'local',
-      login_name: 'admin',
-      password: 'admin123456',
-      channel: 'ops_console',
-    });
+    const response = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({
+        login_type: 'local',
+        login_name: 'admin',
+        password: 'admin123456',
+        channel: 'ops_console',
+      });
 
     const data = unwrapData<{
       role: string;

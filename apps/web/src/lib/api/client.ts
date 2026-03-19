@@ -5,6 +5,17 @@ export type ConsentVersions = {
   age_notice_version: string;
 };
 
+export type SessionUser = {
+  user_id: string;
+  token: string;
+  need_consent: boolean;
+  role: string;
+  login_name: string | null;
+  login_type: string | null;
+};
+
+export type SessionProfile = Omit<SessionUser, "token">;
+
 export type ProductItem = {
   sku_id: string;
   sku_type: string;
@@ -50,23 +61,25 @@ type ApiSuccess<T> = {
 };
 
 type RequestOptions = {
-  method?: 'GET' | 'POST' | 'DELETE';
+  method?: "GET" | "POST" | "DELETE";
   body?: unknown;
   token?: string;
 };
 
 const buildPath = (path: string) =>
-  path.startsWith('/api/') ? path : `/api${path.startsWith('/') ? path : `/${path}`}`;
+  path.startsWith("/api/")
+    ? path
+    : `/api${path.startsWith("/") ? path : `/${path}`}`;
 
 async function apiRequest<T>(path: string, options: RequestOptions = {}) {
   const response = await fetch(buildPath(path), {
-    method: options.method ?? 'GET',
+    method: options.method ?? "GET",
     headers: {
-      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
       ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
     },
     body: options.body ? JSON.stringify(options.body) : undefined,
-    cache: 'no-store',
+    cache: "no-store",
   });
 
   const payload = (await response.json().catch(() => null)) as
@@ -79,55 +92,69 @@ async function apiRequest<T>(path: string, options: RequestOptions = {}) {
 
   if (!response.ok) {
     throw new Error(
-      payload && 'message' in payload && payload.message
+      payload && "message" in payload && payload.message
         ? payload.message
-        : payload && 'error' in payload && payload.error
+        : payload && "error" in payload && payload.error
           ? payload.error
-          : '请求失败，请稍后再试。',
+          : "请求失败，请稍后再试。",
     );
   }
 
-  if (!payload || !('data' in payload)) {
-    throw new Error('响应格式不正确。');
+  if (!payload || !("data" in payload)) {
+    throw new Error("响应格式不正确。");
   }
 
   return payload.data;
 }
 
 export const apiClient = {
-  loginGuest: (body: {
-    login_type: 'guest';
-    device_id: string;
-    channel: 'h5';
+  registerLocal: (body: {
+    login_type: "local";
+    login_name: string;
+    password: string;
+    channel: "h5";
   }) =>
-    apiRequest<{
-      user_id: string;
-      token: string;
-      need_consent: boolean;
-      role: string;
-    }>('/auth/login', {
-      method: 'POST',
+    apiRequest<SessionUser>("/auth/register", {
+      method: "POST",
+      body,
+    }),
+  loginLocal: (body: {
+    login_type: "local";
+    login_name: string;
+    password: string;
+    channel: "h5" | "ops_console";
+  }) =>
+    apiRequest<SessionUser>("/auth/login", {
+      method: "POST",
+      body,
+    }),
+  loginGuest: (body: {
+    login_type: "guest";
+    device_id: string;
+    channel: "h5";
+  }) =>
+    apiRequest<SessionUser>("/auth/login", {
+      method: "POST",
       body,
     }),
   loginAdmin: (body: {
-    login_type: 'local_admin';
+    login_type: "local_admin";
     login_name: string;
     password: string;
-    channel: 'ops_console';
+    channel: "ops_console";
   }) =>
-    apiRequest<{
-      user_id: string;
-      token: string;
-      need_consent: boolean;
-      role: string;
-    }>('/auth/login', {
-      method: 'POST',
+    apiRequest<SessionUser>("/auth/login", {
+      method: "POST",
       body,
     }),
-  getConsentLatest: () => apiRequest<ConsentVersions>('/consent/latest'),
+  getMe: (token: string) =>
+    apiRequest<SessionProfile>("/auth/me", {
+      token,
+    }),
+  getConsentLatest: () => apiRequest<ConsentVersions>("/consent/latest"),
   acceptConsent: (token: string, body: ConsentVersions & { accepted: true }) =>
-    apiRequest<{ accepted: boolean; accepted_at: string }>('/consent/accept', {
-      method: 'POST',
+    apiRequest<{ accepted: boolean; accepted_at: string }>("/consent/accept", {
+      method: "POST",
       token,
       body,
     }),
@@ -135,25 +162,28 @@ export const apiClient = {
     token: string,
     body: { question_text: string; topic_type: string },
   ) =>
-    apiRequest<{ risk_level: string; risk_tags: string[] }>('/question/check-risk', {
-      method: 'POST',
-      token,
-      body,
-    }),
+    apiRequest<{ risk_level: string; risk_tags: string[] }>(
+      "/question/check-risk",
+      {
+        method: "POST",
+        token,
+        body,
+      },
+    ),
   createSession: (
     token: string,
-    body: { topic_type: string; question_text: string; entry_channel: 'h5' },
+    body: { topic_type: string; question_text: string; entry_channel: "h5" },
   ) =>
     apiRequest<{
       session_id: string;
       risk_level: string;
       recommended_skus: string[];
-    }>('/session/create', {
-      method: 'POST',
+    }>("/session/create", {
+      method: "POST",
       token,
       body,
     }),
-  getProducts: () => apiRequest<{ items: ProductItem[] }>('/products'),
+  getProducts: () => apiRequest<{ items: ProductItem[] }>("/products"),
   createOrder: (
     token: string,
     body: { session_id: string; sku_id: string; source: string },
@@ -164,31 +194,32 @@ export const apiClient = {
       payable_amount: number;
       pay_status: string;
       expire_at: string;
-    }>('/orders/create', {
-      method: 'POST',
+    }>("/orders/create", {
+      method: "POST",
       token,
       body,
     }),
   startCheckout: (token: string, order_id: string) =>
-    apiRequest<{ order_id: string; pay_status: string; checkout_token: string }>(
-      '/payments/mock/checkout',
-      {
-        method: 'POST',
-        token,
-        body: { order_id },
-      },
-    ),
+    apiRequest<{
+      order_id: string;
+      pay_status: string;
+      checkout_token: string;
+    }>("/payments/mock/checkout", {
+      method: "POST",
+      token,
+      body: { order_id },
+    }),
   confirmCheckout: (order_id: string) =>
     apiRequest<{ order_id: string; pay_status: string }>(
-      '/payments/mock/callback',
+      "/payments/mock/callback",
       {
-        method: 'POST',
+        method: "POST",
         body: { order_id },
       },
     ),
   createReading: (token: string, session_id: string) =>
-    apiRequest<ReadingSummary>('/readings/create', {
-      method: 'POST',
+    apiRequest<ReadingSummary>("/readings/create", {
+      method: "POST",
       token,
       body: { session_id },
     }),
@@ -203,7 +234,7 @@ export const apiClient = {
         }>;
       }
     >(`/readings/${reading_id}/draw`, {
-      method: 'POST',
+      method: "POST",
       token,
       body: { reversed_enabled },
     }),
@@ -222,7 +253,7 @@ export const apiClient = {
         final_text: string;
       }
     >(`/readings/${reading_id}/generate`, {
-      method: 'POST',
+      method: "POST",
       token,
       body,
     }),
@@ -234,7 +265,7 @@ export const apiClient = {
     apiRequest<{ reading_id: string; reply: string; risk_level: string }>(
       `/readings/${reading_id}/follow-up`,
       {
-        method: 'POST',
+        method: "POST",
         token,
         body: { message },
       },
@@ -246,14 +277,14 @@ export const apiClient = {
           spread_type: string;
         }
       >;
-    }>('/readings/history', {
+    }>("/readings/history", {
       token,
     }),
   archiveReading: (token: string, reading_id: string) =>
     apiRequest<{ reading_id: string; archived: boolean }>(
       `/readings/${reading_id}`,
       {
-        method: 'DELETE',
+        method: "DELETE",
         token,
       },
     ),
@@ -267,7 +298,7 @@ export const apiClient = {
         locked_count: number;
         source_order_id: string;
       }>;
-    }>('/assets/balance', {
+    }>("/assets/balance", {
       token,
     }),
   getAdminReadings: (token: string) =>
@@ -281,7 +312,7 @@ export const apiClient = {
         spread_type: string;
         created_at: string;
       }>;
-    }>('/admin/readings', {
+    }>("/admin/readings", {
       token,
     }),
   getAdminRiskEvents: (token: string) =>
@@ -294,14 +325,14 @@ export const apiClient = {
         action_taken: string;
         created_at: string;
       }>;
-    }>('/admin/risk-events', {
+    }>("/admin/risk-events", {
       token,
     }),
   publishPromptPolicy: (token: string, policy_version: string) =>
     apiRequest<{ policy_version: string; status: string }>(
-      '/admin/prompt-policies/publish',
+      "/admin/prompt-policies/publish",
       {
-        method: 'POST',
+        method: "POST",
         token,
         body: { policy_version },
       },

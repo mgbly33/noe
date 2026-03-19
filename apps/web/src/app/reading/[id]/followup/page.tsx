@@ -1,47 +1,65 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useState } from "react";
+import { useParams } from "next/navigation";
 
-import { AppShell } from '@/components/common/app-shell';
-import { FollowUpForm } from '@/components/followup/followup-form';
-import { apiClient } from '@/lib/api/client';
-import { getGuestToken } from '@/lib/auth/session';
+import { AppShell } from "@/components/common/app-shell";
+import { FollowUpForm } from "@/components/followup/followup-form";
+import { apiClient } from "@/lib/api/client";
+import { useRequireSession } from "@/lib/auth/route-guards";
+import { getDefaultTheme, getThemeBySlug } from "@/lib/ritual-themes";
+import { loadReadingFlow } from "@/lib/state/reading-flow";
 
 export default function FollowUpPage() {
   const params = useParams<{ id: string }>();
-  const [message, setMessage] = useState('');
-  const [reply, setReply] = useState('');
+  const { ready, session } = useRequireSession();
+  const [message, setMessage] = useState("");
+  const [reply, setReply] = useState("");
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+  const flow = loadReadingFlow();
+  const theme =
+    getThemeBySlug(flow.entry_theme ?? getDefaultTheme().slug) ??
+    getDefaultTheme();
 
   const submit = async () => {
-    const token = getGuestToken();
+    const token = session?.token;
     if (!token) {
-      setError('当前没有可用会话。');
-
+      setError("当前没有可用会话，请重新进入本次 reading。");
       return;
     }
 
     setPending(true);
-    setError('');
+    setError("");
 
     try {
       const result = await apiClient.createFollowUp(token, params.id, message);
       setReply(result.reply);
-      setMessage('');
+      setMessage("");
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : '追问失败。');
+      setError(
+        nextError instanceof Error
+          ? nextError.message
+          : "追问失败，请稍后再试。",
+      );
     } finally {
       setPending(false);
     }
   };
 
+  if (!ready || !session) {
+    return null;
+  }
+
   return (
     <AppShell
+      variant="flow"
+      stage={6}
+      stageLabel="继续追问"
+      themeSlug={theme.slug}
       eyebrow="Follow-up"
-      title="在同一条 reading 上继续追问。"
-      description="follow-up 只绑定当前 reading，不会越到其他结果或其他会话里。"
+      title="如果还有没被说清的地方，可以继续把问题留给这一轮牌面。"
+      description="追问会绑定当前 reading，让这次回应继续沿着同一条线索展开。"
     >
       <FollowUpForm
         message={message}

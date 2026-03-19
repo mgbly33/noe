@@ -14,6 +14,13 @@ type ConsentFormProps = {
   onSubmit: () => void;
 };
 
+const protocolItems = [
+  { key: 'privacy_version', label: '隐私说明' },
+  { key: 'disclaimer_version', label: '结果边界' },
+  { key: 'ai_notice_version', label: 'AI 提示' },
+  { key: 'age_notice_version', label: '年龄确认' },
+] as const;
+
 export function ConsentForm({
   checked,
   disabled,
@@ -23,34 +30,28 @@ export function ConsentForm({
   onSubmit,
 }: ConsentFormProps) {
   return (
-    <div className="panel-card">
-      <div className="panel-head">
+    <div className="panel-card form-panel">
+      <div className="panel-head panel-head-start">
         <div>
-          <p className="eyebrow">Consent Gate</p>
-          <h2>继续之前，请确认四项声明。</h2>
+          <p className="eyebrow">Threshold</p>
+          <h2>开始前，先确认这次解读的边界</h2>
         </div>
         {versions ? (
-          <span className="status-pill">当前版本 {versions.disclaimer_version}</span>
+          <span className="status-pill">版本 {versions.disclaimer_version}</span>
         ) : null}
       </div>
 
+      <p className="muted-text">
+        本次结果仅用于自我观察与整理，不替代医疗、法律、财务或任何紧急支持。若你正在经历强烈危险，请先回到现实中的帮助网络。
+      </p>
+
       <div className="protocol-grid">
-        <div className="protocol-card">
-          <strong>隐私</strong>
-          <span>{versions?.privacy_version ?? '加载中'}</span>
-        </div>
-        <div className="protocol-card">
-          <strong>免责声明</strong>
-          <span>{versions?.disclaimer_version ?? '加载中'}</span>
-        </div>
-        <div className="protocol-card">
-          <strong>AI 提示</strong>
-          <span>{versions?.ai_notice_version ?? '加载中'}</span>
-        </div>
-        <div className="protocol-card">
-          <strong>年龄确认</strong>
-          <span>{versions?.age_notice_version ?? '加载中'}</span>
-        </div>
+        {protocolItems.map((item) => (
+          <div key={item.key} className="protocol-card">
+            <strong>{item.label}</strong>
+            <span>{versions?.[item.key] ?? '加载中…'}</span>
+          </div>
+        ))}
       </div>
 
       <label className="checkbox-row">
@@ -60,7 +61,9 @@ export function ConsentForm({
           checked={checked}
           onChange={(event) => onCheckedChange(event.target.checked)}
         />
-        <span>我已阅读并同意以上条款，并理解结果仅供自我反思参考。</span>
+        <span>
+          我已阅读并理解以上说明，知晓本次解读仅作为自我反思参考，并同意继续进入提问阶段。
+        </span>
       </label>
 
       {error ? <p className="error-text">{error}</p> : null}
@@ -72,7 +75,7 @@ export function ConsentForm({
         onClick={onSubmit}
         disabled={!checked || disabled}
       >
-        {disabled ? '提交中...' : '继续提问'}
+        {disabled ? '正在确认…' : '继续整理问题'}
       </button>
     </div>
   );

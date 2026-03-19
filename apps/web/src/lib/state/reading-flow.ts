@@ -1,10 +1,10 @@
-import type { ConsentVersions } from '@/lib/api/client';
+import type { ConsentVersions } from "@/lib/api/client";
+import type { RitualThemeSlug } from "@/lib/ritual-themes";
 
 export type ReadingFlowState = {
-  token?: string;
-  user_id?: string;
   consent_versions?: ConsentVersions;
   consent_accepted?: boolean;
+  entry_theme?: RitualThemeSlug;
   topic_type?: string;
   question_text?: string;
   risk_level?: string;
@@ -15,9 +15,9 @@ export type ReadingFlowState = {
   reading_id?: string;
 };
 
-const STORAGE_KEY = 'ai-tarot-reading-flow';
+const STORAGE_KEY = "ai-tarot-reading-flow";
 
-const isBrowser = () => typeof window !== 'undefined';
+const isBrowser = () => typeof window !== "undefined";
 
 export const loadReadingFlow = (): ReadingFlowState => {
   if (!isBrowser()) {
@@ -58,8 +58,6 @@ export const clearReadingFlow = () => {
 export const resetReadingJourney = () => {
   const current = loadReadingFlow();
   const preserved: ReadingFlowState = {
-    token: current.token,
-    user_id: current.user_id,
     consent_versions: current.consent_versions,
     consent_accepted: current.consent_accepted,
   };
