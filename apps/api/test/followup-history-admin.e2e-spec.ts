@@ -16,14 +16,16 @@ describe('Follow-up, History, and Admin (e2e)', () => {
     return (body as { data: T }).data;
   };
 
+  const createLoginName = (prefix: string) =>
+    `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
   const createConsentedToken = async () => {
-    const loginResponse = await request(app.getHttpServer())
-      .post('/auth/login')
-      .send({
-        login_type: 'guest',
-        device_id: `device_${Date.now()}_task8`,
-        channel: 'h5',
-      });
+    const loginResponse = await request(app.getHttpServer()).post('/auth/register').send({
+      login_type: 'local',
+      login_name: createLoginName('history_user'),
+      password: 'secret123',
+      channel: 'h5',
+    });
     const loginData = unwrapData<{ token: string }>(loginResponse.body);
     const token = loginData.token;
 
@@ -189,6 +191,29 @@ describe('Follow-up, History, and Admin (e2e)', () => {
     );
   });
 
+  it('keeps reading history isolated between two local users', async () => {
+    const userAToken = await createConsentedToken();
+    const userBToken = await createConsentedToken();
+
+    const userAReadingId = await createReadyReading(userAToken);
+    const userBReadingId = await createReadyReading(userBToken);
+
+    const userAHistory = await request(app.getHttpServer())
+      .get('/readings/history')
+      .set('Authorization', `Bearer ${userAToken}`);
+    const userAData = unwrapData<{
+      items: Array<{ reading_id: string }>;
+    }>(userAHistory.body);
+
+    expect(userAHistory.status).toBe(200);
+    expect(
+      userAData.items.some((item) => item.reading_id === userAReadingId),
+    ).toBe(true);
+    expect(
+      userAData.items.some((item) => item.reading_id === userBReadingId),
+    ).toBe(false);
+  });
+
   it('publishes a prompt policy and uses it for new generations', async () => {
     const token = await createConsentedToken();
 
@@ -201,6 +226,9 @@ describe('Follow-up, History, and Admin (e2e)', () => {
       });
 
     const firstReadingId = await createReadyReading(token);
+    const userAdminReadingsResponse = await request(app.getHttpServer())
+      .get('/admin/readings')
+      .set('Authorization', `Bearer ${token}`);
     const adminToken = await createAdminToken();
 
     const readingsResponse = await request(app.getHttpServer())
@@ -233,6 +261,7 @@ describe('Follow-up, History, and Admin (e2e)', () => {
       interpretation: { policy_version: string } | null;
     }>(secondReadingResponse.body);
 
+    expect(userAdminReadingsResponse.status).toBe(403);
     expect(readingsResponse.status).toBe(200);
     expect(
       readingsData.items.some((item) => item.reading_id === firstReadingId),
