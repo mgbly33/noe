@@ -4,6 +4,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import type { User } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 
 import jwt, { JwtPayload } from 'jsonwebtoken';
@@ -15,6 +16,7 @@ import {
   ConsentVersionMap,
   getLatestConsentVersions,
 } from '../consent/consent-version';
+import { hashPassword, verifyPassword } from './password';
 
 loadEnv();
 
@@ -33,11 +35,61 @@ type AccessTokenPayload = JwtPayload & {
   device_id?: string;
 };
 
+type AuthSession = {
+  user_id: string;
+  token: string;
+  need_consent: boolean;
+  role: string;
+  login_name: string | null;
+  login_type: string | null;
+};
+
 @Injectable()
 export class AuthService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async register(body: LoginRequest) {
+    if (body.login_type !== 'local') {
+      throw new BadRequestException('Unsupported login type.');
+    }
+    if (!body.login_name || !body.password || !body.channel) {
+      throw new BadRequestException(
+        'Local registration requires login_name, password, and channel.',
+      );
+    }
+
+    const existing = await this.prisma.user.findFirst({
+      where: {
+        login_name: body.login_name,
+        is_deleted: false,
+      },
+    });
+
+    if (existing) {
+      throw new BadRequestException('Login name already exists.');
+    }
+
+    const user = await this.prisma.user.create({
+      data: {
+        user_id: this.createBusinessId('usr'),
+        login_type: 'local',
+        login_name: body.login_name,
+        password_hash: hashPassword(body.password),
+        role: 'user',
+        channel: body.channel,
+        register_time: new Date(),
+        status: 'active',
+      },
+    });
+
+    return this.buildAuthSession(user, body.channel);
+  }
+
   async login(body: LoginRequest) {
+    if (body.login_type === 'local') {
+      return this.loginLocal(body);
+    }
+
     if (body.login_type === 'local_admin') {
       return this.loginLocalAdmin(body);
     }
@@ -72,16 +124,31 @@ export class AuthService {
       });
     }
 
+    return this.buildAuthSession(user, body.channel, body.device_id);
+  }
+
+  async me(authorization?: string) {
+    const tokenPayload = this.verifyAuthorizationHeader(authorization);
+    const user = await this.prisma.user.findFirst({
+      where: {
+        user_id: tokenPayload.user_id,
+        status: 'active',
+        is_deleted: false,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid bearer token.');
+    }
+
     return {
       user_id: user.user_id,
-      token: this.signAccessToken({
-        user_id: user.user_id,
-        role: user.role,
-        channel: body.channel,
-        device_id: body.device_id,
-      }),
-      need_consent: await this.needsConsentByUserId(user.user_id),
       role: user.role,
+      login_name: user.login_name ?? null,
+      login_type: user.login_type ?? null,
+      need_consent: ['admin', 'super_admin'].includes(user.role)
+        ? false
+        : await this.needsConsentByUserId(user.user_id),
     };
   }
 
@@ -123,6 +190,29 @@ export class AuthService {
     });
   }
 
+  private async loginLocal(body: LoginRequest) {
+    if (!body.login_name || !body.password || !body.channel) {
+      throw new BadRequestException(
+        'Local login requires login_name, password, and channel.',
+      );
+    }
+
+    const user = await this.prisma.user.findFirst({
+      where: {
+        login_type: 'local',
+        login_name: body.login_name,
+        status: 'active',
+        is_deleted: false,
+      },
+    });
+
+    if (!user?.password_hash || !verifyPassword(body.password, user.password_hash)) {
+      throw new UnauthorizedException('Invalid credentials.');
+    }
+
+    return this.buildAuthSession(user, body.channel);
+  }
+
   private async loginLocalAdmin(body: LoginRequest) {
     if (!body.login_name || !body.password) {
       throw new BadRequestException(
@@ -134,24 +224,19 @@ export class AuthService {
       where: {
         login_type: 'local_admin',
         login_name: body.login_name,
-        password_hash: body.password,
         status: 'active',
+        is_deleted: false,
       },
     });
-    if (!admin) {
-      throw new UnauthorizedException('Invalid admin credentials.');
+
+    if (
+      !admin?.password_hash ||
+      !verifyPassword(body.password, admin.password_hash)
+    ) {
+      throw new UnauthorizedException('Invalid credentials.');
     }
 
-    return {
-      user_id: admin.user_id,
-      token: this.signAccessToken({
-        user_id: admin.user_id,
-        role: admin.role,
-        channel: body.channel ?? admin.channel,
-      }),
-      need_consent: false,
-      role: admin.role,
-    };
+    return this.buildAuthSession(admin, body.channel ?? admin.channel);
   }
 
   private getJwtSecret() {
@@ -160,6 +245,28 @@ export class AuthService {
 
   private createBusinessId(prefix: string) {
     return `${prefix}_${randomUUID().replace(/-/g, '')}`;
+  }
+
+  private async buildAuthSession(
+    user: User,
+    channel: string,
+    deviceId?: string,
+  ): Promise<AuthSession> {
+    return {
+      user_id: user.user_id,
+      token: this.signAccessToken({
+        user_id: user.user_id,
+        role: user.role,
+        channel,
+        ...(deviceId ? { device_id: deviceId } : {}),
+      }),
+      need_consent: ['admin', 'super_admin'].includes(user.role)
+        ? false
+        : await this.needsConsentByUserId(user.user_id),
+      role: user.role,
+      login_name: user.login_name ?? null,
+      login_type: user.login_type ?? null,
+    };
   }
 
   private async needsConsentByUserId(userId: string) {
