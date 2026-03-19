@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
+import { hashPassword } from '../../apps/api/src/modules/auth/password';
+
 const prisma = new PrismaClient();
 
 const protocolSeeds = [
@@ -103,7 +105,7 @@ const main = async () => {
     where: { user_id: 'usr_admin_001' },
     update: {
       login_name: 'admin',
-      password_hash: 'admin123456',
+      password_hash: hashPassword('admin123456'),
       role: 'super_admin',
       channel: 'ops_console',
       nickname: 'Local Admin',
@@ -113,7 +115,7 @@ const main = async () => {
       user_id: 'usr_admin_001',
       login_type: 'local_admin',
       login_name: 'admin',
-      password_hash: 'admin123456',
+      password_hash: hashPassword('admin123456'),
       role: 'super_admin',
       channel: 'ops_console',
       nickname: 'Local Admin',
