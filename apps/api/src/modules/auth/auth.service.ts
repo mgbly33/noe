@@ -1,9 +1,9 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { User } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 
 import jwt, { JwtPayload } from 'jsonwebtoken';
@@ -71,9 +71,17 @@ export class AuthService {
         channel: body.channel,
         device_id: body.device_id,
       }),
-      need_consent: await this.needsConsent(user),
+      need_consent: await this.needsConsentByUserId(user.user_id),
       role: user.role,
     };
+  }
+
+  async assertUserHasLatestConsent(userId: string) {
+    if (await this.needsConsentByUserId(userId)) {
+      throw new ForbiddenException(
+        'Consent must be accepted before continuing.',
+      );
+    }
   }
 
   verifyAuthorizationHeader(authorization?: string) {
@@ -105,11 +113,11 @@ export class AuthService {
     return `${prefix}_${randomUUID().replace(/-/g, '')}`;
   }
 
-  private async needsConsent(user: User) {
+  private async needsConsentByUserId(userId: string) {
     const latestVersions = await getLatestConsentVersions(this.prisma);
     const acceptedRecords = await this.prisma.consentRecord.findMany({
       where: {
-        user_id: user.user_id,
+        user_id: userId,
         accepted: true,
         consent_type: {
           in: [...CONSENT_TYPES],
