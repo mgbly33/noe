@@ -18,5 +18,15 @@ describe('AppController', () => {
     it('should return "Hello World!"', () => {
       expect(appController.getHello()).toBe('Hello World!');
     });
+
+    it('should return the health payload', () => {
+      expect(appController.getHealth()).toEqual({
+        code: 0,
+        data: {
+          status: 'ok',
+          service: 'ai-tarot-api',
+        },
+      });
+    });
   });
 });

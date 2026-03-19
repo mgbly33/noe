@@ -6,6 +6,9 @@ const webCommand =
 
 export default defineConfig({
   testDir: './tests/e2e',
+  globalSetup: './tests/e2e/global.setup.ts',
+  globalTeardown: './tests/e2e/global.teardown.ts',
+  outputDir: 'output/playwright/test-results',
   timeout: 60_000,
   workers: 1,
   expect: {
