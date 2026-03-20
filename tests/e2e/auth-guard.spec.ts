@@ -18,6 +18,19 @@ test("public navigation exposes auth entry points but not admin", async ({
   await expect(page.getByTestId("nav-register")).toBeVisible();
 });
 
+test("homepage foregrounds tarot guidance and hero imagery", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  await expect(
+    page.getByRole("heading", {
+      name: "塔罗不会替你决定人生，但会帮你看清此刻",
+    }),
+  ).toBeVisible();
+  await expect(page.getByTestId("hero-tarot-collage")).toBeVisible();
+});
+
 test("registration succeeds and lands on consent", async ({ page }) => {
   await page.goto("/auth/register");
   await page
