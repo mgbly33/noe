@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AiModule } from '../ai/ai.module';
 import { AssetsModule } from '../assets/assets.module';
 import { AuthModule } from '../auth/auth.module';
 import { DrawService } from './draw.service';
@@ -10,7 +11,7 @@ import { ReadingsController } from './readings.controller';
 import { ReadingsService } from './readings.service';
 
 @Module({
-  imports: [AuthModule, AssetsModule],
+  imports: [AuthModule, AssetsModule, AiModule],
   controllers: [ReadingsController],
   providers: [
     ReadingsService,

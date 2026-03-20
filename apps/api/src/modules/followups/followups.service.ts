@@ -6,6 +6,7 @@ import {
 
 import { createBusinessId } from '../../common/id';
 import { PrismaService } from '../../prisma/prisma.service';
+import { OpenAiTarotProvider } from '../ai/openai-tarot.provider';
 import { AuthService } from '../auth/auth.service';
 import { RiskService } from '../risk/risk.service';
 
@@ -15,6 +16,7 @@ export class FollowupsService {
     private readonly prisma: PrismaService,
     private readonly authService: AuthService,
     private readonly riskService: RiskService,
+    private readonly openAiTarotProvider: OpenAiTarotProvider,
   ) {}
 
   async createFollowUp(
@@ -40,6 +42,11 @@ export class FollowupsService {
     }
 
     const risk = this.riskService.evaluateQuestion(body.message);
+    const interpretation = await this.prisma.interpretation.findFirst({
+      where: {
+        reading_id: reading.reading_id,
+      },
+    });
     await this.riskService.recordQuestionRiskEvent({
       user_id: tokenPayload.user_id,
       question_text: body.message,
@@ -49,10 +56,18 @@ export class FollowupsService {
       reading_id: reading.reading_id,
     });
 
-    const reply =
+    const followUpResult =
       risk.risk_level === 'BLOCK'
-        ? '这个追问触发了高风险保护，请先寻求线下专业支持。'
-        : `围绕这次牌面，如果你选择“${body.message}”这条路径，建议先观察最直接的阻力，再做一步小而确定的尝试。`;
+        ? {
+            reply: '这个追问触发了高风险保护，请先寻求线下专业支持。',
+            modelVendor: 'mock',
+            modelVersion: 'mock-followup-v1',
+          }
+        : await this.generateFollowUpReply({
+            questionText: body.message,
+            replyContext:
+              interpretation?.final_text ?? `原问题：${reading.question_text}`,
+          });
 
     await this.prisma.$transaction(async (tx) => {
       await tx.followupMessage.create({
@@ -69,10 +84,10 @@ export class FollowupsService {
           message_id: createBusinessId('msg'),
           reading_id: reading.reading_id,
           role: 'assistant',
-          content: reply,
+          content: followUpResult.reply,
           risk_flag: risk.risk_level === 'LOW' ? null : risk.risk_level,
-          model_vendor: 'mock',
-          model_version: 'mock-followup-v1',
+          model_vendor: followUpResult.modelVendor,
+          model_version: followUpResult.modelVersion,
         },
       });
       await tx.reading.update({
@@ -87,8 +102,26 @@ export class FollowupsService {
 
     return {
       reading_id: reading.reading_id,
-      reply,
+      reply: followUpResult.reply,
       risk_level: risk.risk_level,
     };
+  }
+
+  private async generateFollowUpReply(input: {
+    questionText: string;
+    replyContext: string;
+  }) {
+    if (
+      process.env.NODE_ENV === 'test' ||
+      !this.openAiTarotProvider.isConfigured()
+    ) {
+      return {
+        reply: `围绕这次牌面，如果你选择“${input.questionText}”这条路径，建议先观察最直接的阻力，再做一步小而确定的尝试。`,
+        modelVendor: 'mock',
+        modelVersion: 'mock-followup-v1',
+      };
+    }
+
+    return this.openAiTarotProvider.generateFollowUp(input);
   }
 }
