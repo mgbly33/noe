@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import {
   getSession,
@@ -23,15 +23,14 @@ export const useRequireSession = ({
 }: RequireSessionOptions = {}) => {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [session, setSession] = useState<AuthSession | null>(null);
   const [ready, setReady] = useState(false);
-  const search = searchParams.toString();
 
   const loginRedirect = useMemo(() => {
-    const target = `${pathname}${search ? `?${search}` : ""}`;
+    const search = typeof window === "undefined" ? "" : window.location.search;
+    const target = `${pathname}${search}`;
     return `/auth/login?redirect=${encodeURIComponent(target)}`;
-  }, [pathname, search]);
+  }, [pathname]);
 
   useEffect(() => {
     let cancelled = false;

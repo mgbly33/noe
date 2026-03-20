@@ -14,6 +14,7 @@
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "playwright:install": "playwright install chromium",
+    "assets:tarot:rws1909": "tsx scripts/download-rws1909-deck.ts",
     "db:up": "docker compose up -d mysql",
     "db:down": "docker compose down",
     "db:generate": "prisma generate --schema database/prisma/schema.prisma",

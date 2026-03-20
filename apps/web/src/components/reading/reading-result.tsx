@@ -1,8 +1,10 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 
 import type { ReadingDetail } from '@/lib/api/client';
+import { getTarotCardArt } from '@/lib/tarot/tarot-card-art';
 
 type ReadingResultProps = {
   reading: ReadingDetail;
@@ -11,12 +13,16 @@ type ReadingResultProps = {
 
 export function ReadingResult({ reading, themeLabel }: ReadingResultProps) {
   const summary =
-    reading.interpretation?.structured_result.summary ?? '系统已经整理好本次牌面的核心主题。';
+    reading.interpretation?.structured_result.summary ??
+    '系统已经整理好本次牌面的核心主题。';
   const guidance = reading.interpretation?.structured_result.guidance ?? [];
 
   return (
     <div className="result-layout">
-      <section className="panel-card result-hero-card" data-testid="result-summary">
+      <section
+        className="panel-card result-hero-card"
+        data-testid="result-summary"
+      >
         <p className="eyebrow">Reading Ready</p>
         <h2>{reading.interpretation?.structured_result.theme ?? '本次解读结果'}</h2>
         <p className="lede compact">{summary}</p>
@@ -49,13 +55,38 @@ export function ReadingResult({ reading, themeLabel }: ReadingResultProps) {
         </div>
 
         <div className="draw-grid">
-          {reading.draw?.cards.map((card) => (
-            <article key={card.card_id} className="draw-card">
-              <span className="eyebrow">{`位置 ${card.position}`}</span>
-              <strong>{card.card_name}</strong>
-              <p>{card.orientation === 'reversed' ? '逆位' : '正位'}</p>
-            </article>
-          ))}
+          {reading.draw?.cards.map((card) => {
+            const cardArt = getTarotCardArt(card.card_id);
+
+            return (
+              <article key={card.card_id} className="draw-card draw-card-visual">
+                <div className="draw-card-media">
+                  {cardArt ? (
+                    <Image
+                      src={cardArt.src}
+                      alt={`Tarot card ${card.card_name}`}
+                      fill
+                      sizes="(max-width: 760px) 100vw, 240px"
+                      className="draw-card-image"
+                    />
+                  ) : (
+                    <div className="draw-card-placeholder" aria-hidden="true">
+                      <span>{card.card_name}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="draw-card-body">
+                  <span className="eyebrow draw-card-position">
+                    {`位置 ${card.position}`}
+                  </span>
+                  <strong className="draw-card-name">{card.card_name}</strong>
+                  <p className="draw-card-state">
+                    {card.orientation === 'reversed' ? '逆位' : '正位'}
+                  </p>
+                </div>
+              </article>
+            );
+          })}
         </div>
 
         {guidance.length ? (
